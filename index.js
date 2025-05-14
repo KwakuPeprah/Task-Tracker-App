@@ -4,9 +4,11 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 
+const authenticationRouter = require('./routers/authenticationRouter');
+
 const app = express();
 app.use(cors())
-app.use(helmet)
+app.use(helmet())
 app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -16,6 +18,9 @@ mongoose.connect(process.env.MONGO_URI).then(()=>{
 }).catch((err) => {
     console.log(err)
 })
+
+// Routes
+app.use('/api/auth',authenticationRouter)//if a route has /api/auth, it will be directed to authenticationRouter
 
 
 app.get("/", (req,res) =>{
