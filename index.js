@@ -1,8 +1,11 @@
+
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
+
 
 const authenticationRouter = require('./routers/authenticationRouter');
 

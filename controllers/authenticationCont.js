@@ -3,6 +3,9 @@ const { signupSchema } = require('../middlewares/validator');// Import the signu
 const User = require('../models/usersModel');// Import the User model
 const { doHash, doHashValidation } = require('../utils/hashing');// Import the doHash function from the hashing module
 
+const { v4: uuidv4 } = require('uuid');// Import the uuid library to generate unique verification codes
+const { sendVerificationEmail } = require('../utils/mailer');// Import the sendVerificationEmail function from the mailer module
+
 // Function to handle user signup
 exports.signup = async (req, res) => {
 
@@ -30,19 +33,52 @@ try{
       // If the user does not exist, create a new user
       const hashedPassword = await doHash(password,12);
 
+      //Genearate a unique verification code
+      const verificationToken = require('uuid').v4();
+
       // Create a new user object
-      const newUser = new User({email, password: hashedPassword,});
+      const newUser = new User({
+        email, 
+        password: hashedPassword,
+        verified: false, //Initially not verified
+        verificationToken: verificationToken,
+        verificationTokenExpires: Date.now() + 24 * 3600 * 1000,// Token expires in 24 hours
+    });
 
       // Save the new user to the database
       const savedUser = await newUser.save();
 
-      // Return a success response with the saved user
-      savedUser.password = undefined;// Remove the password from the saved user object
-      res.status(201).json({success: true, message: 'User account created successfully',savedUser})// Return a 201 status code with the success message and the saved user object
+      //Construct the verification link
+      const verificationLink = `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`;
+
+    // Send the verification email
+      const emailSent = await sendVerificationEmail(savedUser.email, verificationLink);
+
+    if (emailSent) {
+      res.status(201).json({
+        success: true,
+        message: 'User account created successfully. Please check your email to verify your account.',
+        savedUser: { _id: savedUser._id, email: savedUser.email }, // Send back only essential info
+      });
+    } else {
+      // Consider if you want to delete the user if email sending fails, or just inform the user
+      res.status(500).json({
+        success: false,
+        message: 'User account created successfully, but failed to send verification email. Please try again later.',
+      });
+    }
+  } catch (error) {
+    console.error('Error during signup:', error);
+    res.status(500).json({ success: false, message: 'An error occurred during signup.' });
+  }
+
+//       // Return a success response with the saved user
+//       savedUser.password = undefined;// Remove the password from the saved user object
+//       res.status(201).json({success: true, message: 'User account created successfully',savedUser})// Return a 201 status code with the success message and the saved user object
    
-} catch(error){
-        console.log(error)
-   }
+// } catch(error){
+//         console.log(error)
+//    }
 };
 
 // FUNCTION TO HANDLE USER SIGNIN
@@ -105,3 +141,34 @@ exports.signin = async (req, res) => {
             .json({success: true, message: 'Signed out successfully'})// Return a success response
     
 };
+
+// FUNCTION TO HANDLE EMAIL VERIFICATION
+exports.verifyEmail = async (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).send('Verification token is missing.');
+  }
+
+  try {
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).send('Invalid or expired verification token.');
+    }
+
+    user.verified = true; // Update the 'verified' field
+    user.verificationToken = undefined;
+    user.verificationTokenExpires = undefined;
+    await user.save();
+
+    res.status(200).send('Your email has been successfully verified! You can now log in.');
+    // Optionally, redirect the user to the login page: res.redirect('/login');
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    res.status(500).send('An error occurred while verifying your email.');
+  }
+}
