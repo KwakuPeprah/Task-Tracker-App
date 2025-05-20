@@ -20,5 +20,7 @@ const postSchema = new mongoose.Schema({
 },{timstamps: true});// Automatically add createdAt and updatedAt fields
 
 
+
+
 // Export the Post model
 module.exports = mongoose.model('Post', postSchema);

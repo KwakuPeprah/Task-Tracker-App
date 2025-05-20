@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 
 
 const authenticationRouter = require('./routers/authenticationRouter');
+const postsRouter = require('./routers/postsRouter');
 
 const app = express();
 app.use(cors())
@@ -24,7 +25,7 @@ mongoose.connect(process.env.MONGO_URI).then(()=>{
 
 // Routes
 app.use('/api/auth',authenticationRouter)//if a route has /api/auth, it will be directed to authenticationRouter
-
+app.use('/api/posts',postsRouter)//if a route has /api/posts, it will be directed to postsRouter
 
 app.get("/", (req,res) =>{
     res.json({message: "Hello World"})

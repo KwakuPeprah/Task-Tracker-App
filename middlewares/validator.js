@@ -15,3 +15,16 @@ exports.signinSchema = joi.object({
     }),
     password: joi.string().min(6).max(1024).required(),
 });
+
+exports.createPostSchema = joi.object({
+    title: joi.string()
+    .min(6)
+    .max(255)
+    .required(),
+    
+    description: joi.string()
+    .min(3)
+    .max(1024)
+    .required(),
+    userid: joi.string().required(),
+    })
