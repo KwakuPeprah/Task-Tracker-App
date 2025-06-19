@@ -72,13 +72,6 @@ try{
     res.status(500).json({ success: false, message: 'An error occurred during signup.' });
   }
 
-//       // Return a success response with the saved user
-//       savedUser.password = undefined;// Remove the password from the saved user object
-//       res.status(201).json({success: true, message: 'User account created successfully',savedUser})// Return a 201 status code with the success message and the saved user object
-   
-// } catch(error){
-//         console.log(error)
-//    }
 };
 
 // FUNCTION TO HANDLE USER SIGNIN

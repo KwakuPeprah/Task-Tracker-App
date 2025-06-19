@@ -1,7 +1,6 @@
 const Post = require('../models/postsModel');
 const { createPostSchema } = require('../middlewares/validator');
 
-
 exports.getPosts = async (req, res) => {
      const {page} = req.query;
      const postsPerPage = 10;
